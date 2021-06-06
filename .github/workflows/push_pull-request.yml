@@ -44,5 +44,5 @@ jobs:
           asset_name: HyperBian.zip
           tag: HyperBian
           release_name: HyperBian
-          body: "Raspberry Pi OS Lite with [Hyperion](https://github.com/hyperion-project/hyperion.ng) pre installed. Also called HyperBian."
+          body: "TEST"
           overwrite: true
