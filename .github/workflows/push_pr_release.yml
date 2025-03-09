@@ -21,8 +21,53 @@ env:
   PLATFORM: bookworm
 
 jobs:
-  image-builder:
-    name: "HyperBian (${{ matrix.pi-gen.architecture }})"
+  # image-builder:
+  #   name: "HyperBian (${{ matrix.pi-gen.architecture }})"
+  #   runs-on: ubuntu-24.04-arm
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       pi-gen: [
+  #         { branch: master, architecture: armhf },
+  #         { branch: arm64,  architecture: arm64 }
+  #       ]
+
+  #   steps:
+  #     - name: ⬇ Checkout HyperBian
+  #       uses: actions/checkout@v4
+
+  #     - name: ⬇ Checkout pi-gen
+  #       uses: actions/checkout@v4
+  #       with:
+  #         repository: RPi-Distro/pi-gen
+  #         ref: ${{ matrix.pi-gen.branch }}
+  #         path: pi-gen
+
+  #     - name: 🔧 Prepare
+  #       run: |
+  #         sudo apt-get update && sudo apt-get install -y coreutils quilt parted qemu-utils qemu-user-static debootstrap zerofree zip dosfstools libarchive-tools libcap2-bin grep rsync xz-utils file git curl bc kmod kpartx arch-test
+  #         echo "HYPERBIAN=HyperBian-${{ env.PLATFORM }}-${{ matrix.pi-gen.architecture }}" >> $GITHUB_ENV
+
+  #     - name: 👷 Build
+  #       run: |
+  #         touch pi-gen/stage3/SKIP pi-gen/stage4/SKIP pi-gen/stage4/SKIP_IMAGES pi-gen/stage5/SKIP pi-gen/stage5/SKIP_IMAGES
+  #         cp -R stage-hyperbian pi-gen/
+  #         touch pi-gen/stage-hyperbian/EXPORT_IMAGE
+  #         cp config pi-gen/ && cd pi-gen
+  #         echo "Suites: ${{ env.PLATFORM }}" >> "./stage-hyperbian/00-install-hyperion/files/hyperion.sources"
+  #         echo "Architectures: ${{ matrix.pi-gen.architecture }}" >> "./stage-hyperbian/00-install-hyperion/files/hyperion.sources"
+  #         echo "RELEASE='${{ env.PLATFORM }}'" >> "./config"
+  #         sudo IMG_FILENAME=${{ env.HYPERBIAN }} ARCHIVE_FILENAME=${{ env.HYPERBIAN }} ./build.sh
+
+  #     - name: 📦 Upload
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ${{ env.HYPERBIAN }}
+  #         path: pi-gen/deploy/*.zip
+  #         retention-days: 1
+
+  image-builder-test:
+    name: "HyperBian TEST (${{ matrix.pi-gen.architecture }})"
     runs-on: ubuntu-24.04-arm
     strategy:
       fail-fast: false
@@ -36,33 +81,28 @@ jobs:
       - name: ⬇ Checkout HyperBian
         uses: actions/checkout@v4
 
-      - name: ⬇ Checkout pi-gen
-        uses: actions/checkout@v4
-        with:
-          repository: RPi-Distro/pi-gen
-          ref: ${{ matrix.pi-gen.branch }}
-          path: pi-gen
-
       - name: 🔧 Prepare
         run: |
-          sudo apt-get update && sudo apt-get install -y coreutils quilt parted qemu-utils qemu-user-static debootstrap zerofree zip dosfstools libarchive-tools libcap2-bin grep rsync xz-utils file git curl bc kmod kpartx arch-test
-          echo "HYPERBIAN=HyperBian-${{ env.PLATFORM }}-${{ matrix.pi-gen.architecture }}" >> $GITHUB_ENV
-
-      - name: 👷 Build
-        run: |
-          touch pi-gen/stage3/SKIP pi-gen/stage4/SKIP pi-gen/stage4/SKIP_IMAGES pi-gen/stage5/SKIP pi-gen/stage5/SKIP_IMAGES
-          cp -R stage-hyperbian pi-gen/
-          touch pi-gen/stage-hyperbian/EXPORT_IMAGE
-          cp config pi-gen/ && cd pi-gen
           echo "Suites: ${{ env.PLATFORM }}" >> "./stage-hyperbian/00-install-hyperion/files/hyperion.sources"
           echo "Architectures: ${{ matrix.pi-gen.architecture }}" >> "./stage-hyperbian/00-install-hyperion/files/hyperion.sources"
-          echo "RELEASE='${{ env.PLATFORM }}'" >> "./config"
-          sudo IMG_FILENAME=${{ env.HYPERBIAN }} ARCHIVE_FILENAME=${{ env.HYPERBIAN }} ./build.sh
 
-      - name: 📦 Upload
-        if: ${{ github.event_name == 'repository_dispatch' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' }}
-        uses: actions/upload-artifact@v4
+      - name: 👷 Build
+        uses: usimd/pi-gen-action@v1
+        id: build
         with:
-          name: ${{ env.HYPERBIAN }}
-          path: pi-gen/deploy/*.zip
-          retention-days: 1
+          image-name: HyperBian
+          pi-gen-release: HyperBian-${{ env.PLATFORM }}-${{ matrix.pi-gen.architecture }}
+          stage-list: stage0 stage1 stage2 ./stage-hyperbian
+          release: ${{ env.PLATFORM }}
+          compression: none
+          hostname: HyperBian
+          username: hyperion
+          password: ambientlight
+          disable-first-boot-user-rename: 1
+          pi-gen-version: ${{ matrix.pi-gen.branch }}
+          verbose-output: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HyperBian-${{ env.PLATFORM }}-${{ matrix.pi-gen.architecture }}-TEST
+          path: ${{ steps.build.outputs.image-path }}
