@@ -23,7 +23,7 @@ env:
 jobs:
   image-builder:
     name: "HyperBian (${{ matrix.pi-gen.architecture }})"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     strategy:
       fail-fast: false
       matrix:
@@ -66,54 +66,3 @@ jobs:
           name: ${{ env.HYPERBIAN }}
           path: pi-gen/deploy/*.zip
           retention-days: 1
-        
-
-#####################################
-###### Publish GitHub Releases ######
-#####################################
-
-  github_publish:
-    name: 🚀 Publish GitHub Releases
-    if: ${{ github.event_name == 'repository_dispatch' || github.event_name == 'workflow_dispatch' }}
-    needs: [ image-builder ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: ⬇ Checkout HyperBian
-        uses: actions/checkout@v4
-
-      - name: 🔧 Prepare
-        id: read_template
-        shell: bash
-        run: |
-          TEMPLATE=$(cat ./.github/workflows/template.md)
-          TEMPLATE="${TEMPLATE//'%'/'%25'}"
-          TEMPLATE="${TEMPLATE//$'\n'/'%0A'}"
-          TEMPLATE="${TEMPLATE//$'\r'/'%0D'}"
-          echo "RELEASE_BODY=$TEMPLATE" >> "$GITHUB_OUTPUT"
-
-      - name: 💾 Artifact download
-        uses: actions/download-artifact@v4.1.8
-        with:
-          pattern: HyperBian-*
-          path: all-artifacts
-          merge-multiple: true
-
-      - name: Delete previous HyperBian Release
-        uses: dev-drprasad/delete-older-releases@v0.3.4
-        with:
-          keep_latest: 0
-          delete_tags: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create release and upload image
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file_glob: true
-          file: all-artifacts/*
-          tag: HyperBian
-          release_name: HyperBian
-          overwrite: true
-          body: |
-            ${{ steps.read_template.outputs.RELEASE_BODY }}
