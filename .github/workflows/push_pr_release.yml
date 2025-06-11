@@ -60,7 +60,7 @@ jobs:
           sudo IMG_FILENAME=${{ env.HYPERBIAN }} ARCHIVE_FILENAME=${{ env.HYPERBIAN }} ./build.sh
 
       - name: 📦 Upload
-        if: ${{ github.event_name == 'repository_dispatch' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' }}
+        # if: ${{ github.event_name == 'repository_dispatch' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.HYPERBIAN }}
