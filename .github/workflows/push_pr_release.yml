@@ -36,28 +36,25 @@ jobs:
       - name: ⬇ Checkout HyperBian
         uses: actions/checkout@v4
 
-      - name: ⬇ Checkout pi-gen
-        uses: actions/checkout@v4
-        with:
-          repository: RPi-Distro/pi-gen
-          ref: ${{ matrix.pi-gen.branch }}
-          path: pi-gen
-
       - name: 🔧 Prepare
         run: |
-          sudo apt-get update && sudo apt-get install -y coreutils quilt parted qemu-user-static debootstrap zerofree zip dosfstools e2fsprogs libarchive-tools libcap2-bin grep rsync xz-utils file git curl bc gpg pigz xxd arch-test bmap-tools kmod
-          echo "HYPERBIAN=HyperBian-${{ env.PLATFORM }}-${{ matrix.pi-gen.architecture }}" >> $GITHUB_ENV
-
-      - name: 👷 Build
-        run: |
-          touch pi-gen/stage3/SKIP pi-gen/stage4/SKIP pi-gen/stage4/SKIP_IMAGES pi-gen/stage5/SKIP pi-gen/stage5/SKIP_IMAGES
-          cp -R stage-hyperbian pi-gen/
-          touch pi-gen/stage-hyperbian/EXPORT_IMAGE
-          cp config pi-gen/ && cd pi-gen
           echo "Suites: ${{ env.PLATFORM }}" >> "./stage-hyperbian/00-install-hyperion/files/hyperion.sources"
           echo "Architectures: ${{ matrix.pi-gen.architecture }}" >> "./stage-hyperbian/00-install-hyperion/files/hyperion.sources"
-          echo "RELEASE='${{ env.PLATFORM }}'" >> "./config"
-          sudo IMG_FILENAME=${{ env.HYPERBIAN }} ARCHIVE_FILENAME=${{ env.HYPERBIAN }} ./build-docker.sh
+
+      - name: 👷 Build
+        id: build
+        uses: usimd/pi-gen-action@v1
+        with:
+          image-name: "HYPERBIAN=HyperBian-${{ env.PLATFORM }}-${{ matrix.pi-gen.architecture }}"
+          hostname: 'HyperBian'
+          disable-first-boot-user-rename: 1
+          username: 'hyperion'
+          password: 'ambientlight'
+          enable-ssh: 1
+          stage-list: stage0 stage1 stage2 ./stage-hyperbian
+          verbose-output: true
+          pi-gen-version: ${{ matrix.pi-gen.branch }}
+          release: ${{ env.PLATFORM }}
 
       - name: 📦 Upload
         if: ${{ github.event_name == 'repository_dispatch' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' }}
