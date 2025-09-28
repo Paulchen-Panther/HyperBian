@@ -18,7 +18,7 @@ on:
     types: [ hyperion_push ]
 
 env:
-  PLATFORM: trixie
+  PLATFORM: bookworm
 
 jobs:
   image-builder:
@@ -57,7 +57,7 @@ jobs:
           echo "Suites: ${{ env.PLATFORM }}" >> "./stage-hyperbian/00-install-hyperion/files/hyperion.sources"
           echo "Architectures: ${{ matrix.pi-gen.architecture }}" >> "./stage-hyperbian/00-install-hyperion/files/hyperion.sources"
           echo "RELEASE='${{ env.PLATFORM }}'" >> "./config"
-          sudo IMG_FILENAME=${{ env.HYPERBIAN }} ARCHIVE_FILENAME=${{ env.HYPERBIAN }} ./build.sh
+          sudo IMG_FILENAME=${{ env.HYPERBIAN }} ARCHIVE_FILENAME=${{ env.HYPERBIAN }} ./build-docker.sh
 
       - name: 📦 Upload
         if: ${{ github.event_name == 'repository_dispatch' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' }}
