@@ -43,7 +43,7 @@ jobs:
 
       - name: 👷 Build
         id: build
-        uses: usimd/pi-gen-action@v1
+        uses: usimd/pi-gen-action@v1.10.0
         with:
           image-name: "HYPERBIAN=HyperBian-${{ env.PLATFORM }}-${{ matrix.pi-gen.architecture }}"
           hostname: 'HyperBian'
